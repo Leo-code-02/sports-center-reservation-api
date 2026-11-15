@@ -16,6 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\SportsCenterReservation.Application\SportsCenterReservation.Application.csproj" />
     <ProjectReference Include="..\SportsCenterReservation.Domain\SportsCenterReservation.Domain.csproj" />
     <ProjectReference Include="..\SportsCenterReservation.Infrastructure\SportsCenterReservation.Infrastructure.csproj" />
   </ItemGroup>

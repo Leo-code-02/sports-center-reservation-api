@@ -1,110 +1,54 @@
 ﻿namespace SportsCenterReservation.Api.Controllers;
 
 using Microsoft.AspNetCore.Mvc;
-using SportsCenterReservation.Api.DTOs;
-using SportsCenterReservation.Domain.Entities;
-using SportsCenterReservation.Infrastructure.Interfaces;
+using SportsCenterReservation.Application.Contract;
+using SportsCenterReservation.Application.Dtos;
 
 [ApiController]
 [Route("api/[controller]")]
 public class UsersController : ControllerBase
 {
-    private readonly IUserRepository _userRepository;
+    private readonly IUserService _userService;
 
-    public UsersController(IUserRepository userRepository)
+    public UsersController(IUserService userService)
     {
-        _userRepository = userRepository;
+        _userService = userService;
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<UserResponseDto>>> GetUsers()
+    public async Task<IActionResult> GetUsers()
     {
-        var users = await _userRepository.GetAllAsync();
-        var result = users.Select(u => new UserResponseDto
-        {
-            Id = u.Id,
-            FullName = u.FullName,
-            Email = u.Email,
-            PhoneNumber = u.PhoneNumber,
-            IdentificationNumber = u.IdentificationNumber,
-            RegistrationDate = u.RegistrationDate,
-            IsActive = u.IsActive
-        });
-
+        var result = await _userService.GetAllAsync();
         return Ok(result);
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<UserResponseDto>> GetUser(int id)
+    public async Task<IActionResult> GetUser(int id)
     {
-        var user = await _userRepository.GetByIdAsync(id);
-        if (user == null) return NotFound();
-
-        return Ok(new UserResponseDto
-        {
-            Id = user.Id,
-            FullName = user.FullName,
-            Email = user.Email,
-            PhoneNumber = user.PhoneNumber,
-            IdentificationNumber = user.IdentificationNumber,
-            RegistrationDate = user.RegistrationDate,
-            IsActive = user.IsActive
-        });
+        var result = await _userService.GetByIdAsync(id);
+        return result.Success ? Ok(result) : NotFound(result);
     }
 
     [HttpPost]
-    public async Task<ActionResult<UserResponseDto>> RegisterUser(UserRegisterDto dto)
+    public async Task<IActionResult> RegisterUser(UserRegisterDto dto)
     {
-        var existing = await _userRepository.GetByEmailAsync(dto.Email);
-        if (existing != null)
-            return Conflict("A user with this email already exists.");
+        var result = await _userService.RegisterAsync(dto);
+        if (!result.Success) return BadRequest(result);
 
-        var user = new User
-        {
-            FullName = dto.FullName,
-            Email = dto.Email,
-            PhoneNumber = dto.PhoneNumber,
-            IdentificationNumber = dto.IdentificationNumber
-        };
-
-        var created = await _userRepository.AddAsync(user);
-
-        var response = new UserResponseDto
-        {
-            Id = created.Id,
-            FullName = created.FullName,
-            Email = created.Email,
-            PhoneNumber = created.PhoneNumber,
-            IdentificationNumber = created.IdentificationNumber,
-            RegistrationDate = created.RegistrationDate,
-            IsActive = created.IsActive
-        };
-
-        return CreatedAtAction(nameof(GetUser), new { id = created.Id }, response);
+        return CreatedAtAction(nameof(GetUser), new { id = result.Data!.Id }, result);
     }
 
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateUser(int id, UserRegisterDto dto)
     {
-        var user = await _userRepository.GetByIdAsync(id);
-        if (user == null) return NotFound();
-
-        user.FullName = dto.FullName;
-        user.Email = dto.Email;
-        user.PhoneNumber = dto.PhoneNumber;
-        user.IdentificationNumber = dto.IdentificationNumber;
-
-        await _userRepository.UpdateAsync(user);
-        return NoContent();
+        var result = await _userService.UpdateAsync(id, dto);
+        return result.Success ? Ok(result) : BadRequest(result);
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteUser(int id)
     {
-        var user = await _userRepository.GetByIdAsync(id);
-        if (user == null) return NotFound();
-
-        await _userRepository.DeleteAsync(user);
-        return NoContent();
+        var result = await _userService.DeleteAsync(id);
+        return result.Success ? Ok(result) : NotFound(result);
     }
 }

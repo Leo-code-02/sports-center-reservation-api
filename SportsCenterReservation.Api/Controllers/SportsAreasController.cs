@@ -1,103 +1,54 @@
 ﻿namespace SportsCenterReservation.Api.Controllers;
 
 using Microsoft.AspNetCore.Mvc;
-using SportsCenterReservation.Api.DTOs;
-using SportsCenterReservation.Domain.Entities;
-using SportsCenterReservation.Infrastructure.Interfaces;
+using SportsCenterReservation.Application.Contract;
+using SportsCenterReservation.Application.Dtos;
 
 [ApiController]
 [Route("api/[controller]")]
 public class SportsAreasController : ControllerBase
 {
-    private readonly ISportsAreaRepository _sportsAreaRepository;
+    private readonly ISportsAreaService _sportsAreaService;
 
-    public SportsAreasController(ISportsAreaRepository sportsAreaRepository)
+    public SportsAreasController(ISportsAreaService sportsAreaService)
     {
-        _sportsAreaRepository = sportsAreaRepository;
+        _sportsAreaService = sportsAreaService;
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<SportsAreaReadDto>>> GetSportsAreas()
+    public async Task<IActionResult> GetSportsAreas()
     {
-        var areas = await _sportsAreaRepository.GetAllAsync();
-        var result = areas.Select(a => new SportsAreaReadDto
-        {
-            Id = a.Id,
-            Name = a.Name,
-            SportType = a.SportType,
-            MaxCapacity = a.MaxCapacity,
-            HourlyRate = a.HourlyRate,
-            IsActive = a.IsActive
-        });
-
+        var result = await _sportsAreaService.GetAllAsync();
         return Ok(result);
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<SportsAreaReadDto>> GetSportsArea(int id)
+    public async Task<IActionResult> GetSportsArea(int id)
     {
-        var area = await _sportsAreaRepository.GetByIdAsync(id);
-        if (area == null) return NotFound();
-
-        return Ok(new SportsAreaReadDto
-        {
-            Id = area.Id,
-            Name = area.Name,
-            SportType = area.SportType,
-            MaxCapacity = area.MaxCapacity,
-            HourlyRate = area.HourlyRate,
-            IsActive = area.IsActive
-        });
+        var result = await _sportsAreaService.GetByIdAsync(id);
+        return result.Success ? Ok(result) : NotFound(result);
     }
 
     [HttpPost]
-    public async Task<ActionResult<SportsAreaReadDto>> CreateSportsArea(SportsAreaCreateDto dto)
+    public async Task<IActionResult> CreateSportsArea(SportsAreaCreateDto dto)
     {
-        var area = new SportsArea
-        {
-            Name = dto.Name,
-            SportType = dto.SportType,
-            MaxCapacity = dto.MaxCapacity,
-            HourlyRate = dto.HourlyRate
-        };
+        var result = await _sportsAreaService.CreateAsync(dto);
+        if (!result.Success) return BadRequest(result);
 
-        var created = await _sportsAreaRepository.AddAsync(area);
-
-        var readDto = new SportsAreaReadDto
-        {
-            Id = created.Id,
-            Name = created.Name,
-            SportType = created.SportType,
-            MaxCapacity = created.MaxCapacity,
-            HourlyRate = created.HourlyRate,
-            IsActive = created.IsActive
-        };
-
-        return CreatedAtAction(nameof(GetSportsArea), new { id = created.Id }, readDto);
+        return CreatedAtAction(nameof(GetSportsArea), new { id = result.Data!.Id }, result);
     }
 
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateSportsArea(int id, SportsAreaCreateDto dto)
     {
-        var area = await _sportsAreaRepository.GetByIdAsync(id);
-        if (area == null) return NotFound();
-
-        area.Name = dto.Name;
-        area.SportType = dto.SportType;
-        area.MaxCapacity = dto.MaxCapacity;
-        area.HourlyRate = dto.HourlyRate;
-
-        await _sportsAreaRepository.UpdateAsync(area);
-        return NoContent();
+        var result = await _sportsAreaService.UpdateAsync(id, dto);
+        return result.Success ? Ok(result) : BadRequest(result);
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteSportsArea(int id)
     {
-        var area = await _sportsAreaRepository.GetByIdAsync(id);
-        if (area == null) return NotFound();
-
-        await _sportsAreaRepository.DeleteAsync(area);
-        return NoContent();
+        var result = await _sportsAreaService.DeleteAsync(id);
+        return result.Success ? Ok(result) : NotFound(result);
     }
 }
