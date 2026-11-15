@@ -1,78 +1,63 @@
 ﻿namespace SportsCenterReservation.Api.Controllers;
 
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using SportsCenterReservation.Api.Data;
 using SportsCenterReservation.Api.DTOs;
-using SportsCenterReservation.Api.Models;
+using SportsCenterReservation.Domain.Entities;
+using SportsCenterReservation.Infrastructure.Interfaces;
 
 [ApiController]
 [Route("api/[controller]")]
 public class SchedulesController : ControllerBase
 {
-    private readonly ApplicationDbContext _context;
+    private readonly IScheduleRepository _scheduleRepository;
+    private readonly ISportsAreaRepository _sportsAreaRepository;
 
-    public SchedulesController(ApplicationDbContext context)
+    public SchedulesController(IScheduleRepository scheduleRepository, ISportsAreaRepository sportsAreaRepository)
     {
-        _context = context;
+        _scheduleRepository = scheduleRepository;
+        _sportsAreaRepository = sportsAreaRepository;
     }
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<ScheduleReadDto>>> GetSchedules()
     {
-        var schedules = await _context.Schedules
-            .Select(s => new ScheduleReadDto
-            {
-                Id = s.Id,
-                DayOfWeek = s.DayOfWeek,
-                StartTime = s.StartTime,
-                EndTime = s.EndTime,
-                SportsAreaId = s.SportsAreaId
-            })
-            .ToListAsync();
+        var schedules = await _scheduleRepository.GetAllAsync();
+        var result = schedules.Select(s => new ScheduleReadDto
+        {
+            Id = s.Id,
+            DayOfWeek = s.DayOfWeek,
+            StartTime = s.StartTime,
+            EndTime = s.EndTime,
+            SportsAreaId = s.SportsAreaId
+        });
 
-        return Ok(schedules);
+        return Ok(result);
     }
-
 
     [HttpGet("{id}")]
     public async Task<ActionResult<ScheduleReadDto>> GetSchedule(int id)
     {
-        var schedule = await _context.Schedules.FindAsync(id);
+        var schedule = await _scheduleRepository.GetByIdAsync(id);
+        if (schedule == null) return NotFound();
 
-        if (schedule == null)
-        {
-            return NotFound();
-        }
-
-        var dto = new ScheduleReadDto
+        return Ok(new ScheduleReadDto
         {
             Id = schedule.Id,
             DayOfWeek = schedule.DayOfWeek,
             StartTime = schedule.StartTime,
             EndTime = schedule.EndTime,
             SportsAreaId = schedule.SportsAreaId
-        };
-
-        return Ok(dto);
+        });
     }
-
 
     [HttpPost]
     public async Task<ActionResult<ScheduleReadDto>> CreateSchedule(ScheduleCreateDto dto)
     {
-
-        var areaExists = await _context.SportsAreas.AnyAsync(a => a.Id == dto.SportsAreaId);
-        if (!areaExists)
-        {
-            return BadRequest("El área deportiva especificada no existe.");
-        }
-
+        if (!await _sportsAreaRepository.ExistsAsync(a => a.Id == dto.SportsAreaId))
+            return BadRequest("Sports area does not exist.");
 
         if (dto.StartTime >= dto.EndTime)
-        {
-            return BadRequest("La hora de inicio debe ser anterior a la hora de fin.");
-        }
+            return BadRequest("Start time must be earlier than end time.");
 
         var schedule = new Schedule
         {
@@ -82,67 +67,46 @@ public class SchedulesController : ControllerBase
             SportsAreaId = dto.SportsAreaId
         };
 
-        _context.Schedules.Add(schedule);
-        await _context.SaveChangesAsync();
+        var created = await _scheduleRepository.AddAsync(schedule);
 
-        var readDto = new ScheduleReadDto
+        return CreatedAtAction(nameof(GetSchedule), new { id = created.Id }, new ScheduleReadDto
         {
-            Id = schedule.Id,
-            DayOfWeek = schedule.DayOfWeek,
-            StartTime = schedule.StartTime,
-            EndTime = schedule.EndTime,
-            SportsAreaId = schedule.SportsAreaId
-        };
-
-        return CreatedAtAction(nameof(GetSchedule), new { id = schedule.Id }, readDto);
+            Id = created.Id,
+            DayOfWeek = created.DayOfWeek,
+            StartTime = created.StartTime,
+            EndTime = created.EndTime,
+            SportsAreaId = created.SportsAreaId
+        });
     }
-
 
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateSchedule(int id, ScheduleCreateDto dto)
     {
-        var schedule = await _context.Schedules.FindAsync(id);
+        var schedule = await _scheduleRepository.GetByIdAsync(id);
+        if (schedule == null) return NotFound();
 
-        if (schedule == null)
-        {
-            return NotFound();
-        }
-
-        var areaExists = await _context.SportsAreas.AnyAsync(a => a.Id == dto.SportsAreaId);
-        if (!areaExists)
-        {
-            return BadRequest("El área deportiva especificada no existe.");
-        }
+        if (!await _sportsAreaRepository.ExistsAsync(a => a.Id == dto.SportsAreaId))
+            return BadRequest("Sports area does not exist.");
 
         if (dto.StartTime >= dto.EndTime)
-        {
-            return BadRequest("La hora de inicio debe ser anterior a la hora de fin.");
-        }
+            return BadRequest("Start time must be earlier than end time.");
 
         schedule.DayOfWeek = dto.DayOfWeek;
         schedule.StartTime = dto.StartTime;
         schedule.EndTime = dto.EndTime;
         schedule.SportsAreaId = dto.SportsAreaId;
 
-        await _context.SaveChangesAsync();
-
+        await _scheduleRepository.UpdateAsync(schedule);
         return NoContent();
     }
-
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteSchedule(int id)
     {
-        var schedule = await _context.Schedules.FindAsync(id);
+        var schedule = await _scheduleRepository.GetByIdAsync(id);
+        if (schedule == null) return NotFound();
 
-        if (schedule == null)
-        {
-            return NotFound();
-        }
-
-        _context.Schedules.Remove(schedule);
-        await _context.SaveChangesAsync();
-
+        await _scheduleRepository.DeleteAsync(schedule);
         return NoContent();
     }
 }

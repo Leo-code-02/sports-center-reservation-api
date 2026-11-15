@@ -1,13 +1,16 @@
-﻿namespace SportsCenterReservation.Api.Models
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+using SportsCenterReservation.Domain.Core;
+
+namespace SportsCenterReservation.Domain.Entities
 {
-    public class SportsArea
+    public class SportsArea : BaseEntity
     {
-        public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public string SportType { get; set; } = string.Empty;
         public int MaxCapacity { get; set; }
         public decimal HourlyRate { get; set; }
-        public bool IsActive { get; set; } = true;
 
         public ICollection<Schedule> Schedules { get; set; } = new List<Schedule>();
     }
