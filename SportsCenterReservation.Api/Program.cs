@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using SportsCenterReservation.Application.Contract;
+using SportsCenterReservation.Application.Service;
 using SportsCenterReservation.Domain.Repository;
 using SportsCenterReservation.Infrastructure.Context;
 using SportsCenterReservation.Infrastructure.Core;
@@ -12,12 +14,18 @@ builder.Services.AddControllers();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Inyección de Dependencias de Repositorios
+
 builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
 builder.Services.AddScoped<ISportsAreaRepository, SportsAreaRepository>();
 builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IReservationRepository, ReservationRepository>();
+
+
+builder.Services.AddScoped<ISportsAreaService, SportsAreaService>();
+builder.Services.AddScoped<IScheduleService, ScheduleService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IReservationService, ReservationService>();
 
 builder.Services.AddOpenApi();
 

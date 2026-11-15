@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="SportsCenterReservation.Api/SportsCenterReservation.Api.csproj" />
+  <Project Path="SportsCenterReservation.Application/SportsCenterReservation.Application.csproj" Id="92bd4e5b-23bb-4132-b10b-63dbb9fdb914" />
   <Project Path="SportsCenterReservation.Domain/SportsCenterReservation.Domain.csproj" />
   <Project Path="SportsCenterReservation.Infrastructure/SportsCenterReservation.Infrastructure.csproj" />
 </Solution>
