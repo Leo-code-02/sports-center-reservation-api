@@ -1,3 +1,5 @@
 <Solution>
   <Project Path="SportsCenterReservation.Api/SportsCenterReservation.Api.csproj" />
+  <Project Path="SportsCenterReservation.Domain/SportsCenterReservation.Domain.csproj" />
+  <Project Path="SportsCenterReservation.Infrastructure/SportsCenterReservation.Infrastructure.csproj" />
 </Solution>

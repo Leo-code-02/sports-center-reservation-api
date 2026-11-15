@@ -1,7 +1,11 @@
-﻿namespace SportsCenterReservation.Api.Data;
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace SportsCenterReservation.Infrastructure.Context;
 
 using Microsoft.EntityFrameworkCore;
-using SportsCenterReservation.Api.Models;
+using SportsCenterReservation.Domain.Entities;
 
 public class ApplicationDbContext : DbContext
 {
@@ -20,14 +24,12 @@ public class ApplicationDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        
         modelBuilder.Entity<Schedule>()
             .HasOne(s => s.SportsArea)
             .WithMany(sa => sa.Schedules)
             .HasForeignKey(s => s.SportsAreaId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        
         modelBuilder.Entity<Reservation>()
             .HasOne(r => r.SportsArea)
             .WithMany()
@@ -46,17 +48,8 @@ public class ApplicationDbContext : DbContext
             .HasForeignKey(r => r.UserId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        
-        modelBuilder.Entity<SportsArea>()
-            .Property(sa => sa.HourlyRate)
-            .HasPrecision(18, 2);
-
-        modelBuilder.Entity<Reservation>()
-            .Property(r => r.TotalAmount)
-            .HasPrecision(18, 2);
-
-        modelBuilder.Entity<Payment>()
-            .Property(p => p.Amount)
-            .HasPrecision(18, 2);
+        modelBuilder.Entity<SportsArea>().Property(sa => sa.HourlyRate).HasPrecision(18, 2);
+        modelBuilder.Entity<Reservation>().Property(r => r.TotalAmount).HasPrecision(18, 2);
+        modelBuilder.Entity<Payment>().Property(p => p.Amount).HasPrecision(18, 2);
     }
 }

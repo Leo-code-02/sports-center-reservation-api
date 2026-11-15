@@ -1,52 +1,45 @@
 ﻿namespace SportsCenterReservation.Api.Controllers;
 
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using SportsCenterReservation.Api.Data;
 using SportsCenterReservation.Api.DTOs;
-using SportsCenterReservation.Api.Models;
+using SportsCenterReservation.Domain.Entities;
+using SportsCenterReservation.Infrastructure.Interfaces;
 
 [ApiController]
 [Route("api/[controller]")]
 public class SportsAreasController : ControllerBase
 {
-    private readonly ApplicationDbContext _context;
+    private readonly ISportsAreaRepository _sportsAreaRepository;
 
-    public SportsAreasController(ApplicationDbContext context)
+    public SportsAreasController(ISportsAreaRepository sportsAreaRepository)
     {
-        _context = context;
+        _sportsAreaRepository = sportsAreaRepository;
     }
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<SportsAreaReadDto>>> GetSportsAreas()
     {
-        var areas = await _context.SportsAreas
-            .Select(a => new SportsAreaReadDto
-            {
-                Id = a.Id,
-                Name = a.Name,
-                SportType = a.SportType,
-                MaxCapacity = a.MaxCapacity,
-                HourlyRate = a.HourlyRate,
-                IsActive = a.IsActive
-            })
-            .ToListAsync();
+        var areas = await _sportsAreaRepository.GetAllAsync();
+        var result = areas.Select(a => new SportsAreaReadDto
+        {
+            Id = a.Id,
+            Name = a.Name,
+            SportType = a.SportType,
+            MaxCapacity = a.MaxCapacity,
+            HourlyRate = a.HourlyRate,
+            IsActive = a.IsActive
+        });
 
-        return Ok(areas);
+        return Ok(result);
     }
-
 
     [HttpGet("{id}")]
     public async Task<ActionResult<SportsAreaReadDto>> GetSportsArea(int id)
     {
-        var area = await _context.SportsAreas.FindAsync(id);
+        var area = await _sportsAreaRepository.GetByIdAsync(id);
+        if (area == null) return NotFound();
 
-        if (area == null)
-        {
-            return NotFound();
-        }
-
-        var dto = new SportsAreaReadDto
+        return Ok(new SportsAreaReadDto
         {
             Id = area.Id,
             Name = area.Name,
@@ -54,11 +47,8 @@ public class SportsAreasController : ControllerBase
             MaxCapacity = area.MaxCapacity,
             HourlyRate = area.HourlyRate,
             IsActive = area.IsActive
-        };
-
-        return Ok(dto);
+        });
     }
-
 
     [HttpPost]
     public async Task<ActionResult<SportsAreaReadDto>> CreateSportsArea(SportsAreaCreateDto dto)
@@ -68,60 +58,46 @@ public class SportsAreasController : ControllerBase
             Name = dto.Name,
             SportType = dto.SportType,
             MaxCapacity = dto.MaxCapacity,
-            HourlyRate = dto.HourlyRate,
-            IsActive = true
+            HourlyRate = dto.HourlyRate
         };
 
-        _context.SportsAreas.Add(area);
-        await _context.SaveChangesAsync();
+        var created = await _sportsAreaRepository.AddAsync(area);
 
         var readDto = new SportsAreaReadDto
         {
-            Id = area.Id,
-            Name = area.Name,
-            SportType = area.SportType,
-            MaxCapacity = area.MaxCapacity,
-            HourlyRate = area.HourlyRate,
-            IsActive = area.IsActive
+            Id = created.Id,
+            Name = created.Name,
+            SportType = created.SportType,
+            MaxCapacity = created.MaxCapacity,
+            HourlyRate = created.HourlyRate,
+            IsActive = created.IsActive
         };
 
-        return CreatedAtAction(nameof(GetSportsArea), new { id = area.Id }, readDto);
+        return CreatedAtAction(nameof(GetSportsArea), new { id = created.Id }, readDto);
     }
-
 
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateSportsArea(int id, SportsAreaCreateDto dto)
     {
-        var area = await _context.SportsAreas.FindAsync(id);
-
-        if (area == null)
-        {
-            return NotFound();
-        }
+        var area = await _sportsAreaRepository.GetByIdAsync(id);
+        if (area == null) return NotFound();
 
         area.Name = dto.Name;
         area.SportType = dto.SportType;
         area.MaxCapacity = dto.MaxCapacity;
         area.HourlyRate = dto.HourlyRate;
 
-        await _context.SaveChangesAsync();
-
+        await _sportsAreaRepository.UpdateAsync(area);
         return NoContent();
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteSportsArea(int id)
     {
-        var area = await _context.SportsAreas.FindAsync(id);
+        var area = await _sportsAreaRepository.GetByIdAsync(id);
+        if (area == null) return NotFound();
 
-        if (area == null)
-        {
-            return NotFound();
-        }
-
-        _context.SportsAreas.Remove(area);
-        await _context.SaveChangesAsync();
-
+        await _sportsAreaRepository.DeleteAsync(area);
         return NoContent();
     }
 }

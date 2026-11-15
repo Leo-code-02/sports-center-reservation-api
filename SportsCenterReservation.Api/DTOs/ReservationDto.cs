@@ -1,6 +1,6 @@
 ﻿namespace SportsCenterReservation.Api.DTOs
 {
-    using SportsCenterReservation.Api.Models;
+    using SportsCenterReservation.Domain.Entities;
     public class ReservationDto
     {
         public class ReservationCreateDto

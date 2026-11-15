@@ -15,4 +15,9 @@
     </PackageReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\SportsCenterReservation.Domain\SportsCenterReservation.Domain.csproj" />
+    <ProjectReference Include="..\SportsCenterReservation.Infrastructure\SportsCenterReservation.Infrastructure.csproj" />
+  </ItemGroup>
+
 </Project>
